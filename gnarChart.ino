@@ -114,6 +114,8 @@ char* getSpotJSON(String spotName) {
 void loop() {
   //light LEDs
   
+  //TODO make a way to set all to 0
+  
   if (switchValidPress(spotTrack)) {
     //change spotIndex
     int newSpot = curSpot + 1;
