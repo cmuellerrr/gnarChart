@@ -1,14 +1,17 @@
-#define SPOTS 3
-#define METRICS 3
-#define COLUMNS 8
+#define NUM_SPOTS 3
+#define NUM_METRICS 3
+#define NUM_COLUMNS 8
 
 enum {SWELL, WIND, TIDE};
-const int columnSpan = 24 / COLUMNS;
+const int columnSpan = 24 / NUM_COLUMNS;
 
 
-//Define a spot (aka location)
+/* Define a spot (aka location)
+ * name: the name of the spot
+ * values: the metric values for this spot
+ *         metric indexes match the enum
+ */
 typedef struct Spot {
-  String name;                   // The name of the spot
-  int values[METRICS][COLUMNS];  // The metric values for this spot
-                                 // Metric indexs match that of the enum
+  String name;
+  int values[NUM_METRICS][NUM_COLUMNS];
 };

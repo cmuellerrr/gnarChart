@@ -18,17 +18,13 @@ switchTracker spotTrack;
 const int metricPin = 4;
 switchTracker metricTrack;
 
-//The info for the metrics shown
-int curMetric;
-int newMetric;
-
-//General constants
+//General constants for spots and metrics
 const String spotNames[] = {"Mavericks", "El Porto", "Lower Trestles"};
-Spot spots[SPOTS];
-int spotIndex;
+Spot spots[NUM_SPOTS];
+int curSpot;
+int curMetric;
 
 //char** jsonFilter = {"forecast", "hour", "size", "size_ft", "tide", "tide_meters", "wind", "speed_kts", "speed_mpg", NULL};
-
 
 //Initialization code
 void setup() {
@@ -39,17 +35,25 @@ void setup() {
   
   setupSpots();
   
-  spotIndex = 0;
-  curMetric = 0;
-  newMetric = -1;
+  curSpot = -1;
+  curMetric = -1;
+  transition(0, SWELL);
 }
 
+/*
+ * Setup all spots for the chart.
+ */
 void setupSpots() {
-  for (int i = 0; i < SPOTS; i++) {
+  for (int i = 0; i < NUM_SPOTS; i++) {
     spots[i] = setupSpot(spotNames[i]); 
   }
 }
 
+/*
+ * Setup a spot object representing the given spot name.
+ * Get the json representation and parse the values into
+ * their appropriate arrays.
+ */
 Spot setupSpot(String spotName) {  
   Spot newSpot;
   newSpot.name = spotName;
@@ -64,6 +68,10 @@ Spot setupSpot(String spotName) {
   return newSpot;
 }
 
+/*
+ * From the given json object root, parse the given metric into the 
+ * array specified by the given pointer.
+ */
 void parseMetric(aJsonObject* root, char* metric, char* attribute, int* spotArr) {
   aJsonObject* values = aJson.getObjectItem(root, metric);
   aJsonObject* v = values->child;
@@ -72,7 +80,7 @@ void parseMetric(aJsonObject* root, char* metric, char* attribute, int* spotArr)
   int minValue = 0;
   int columnIndex = 0;
   int counter = 0;
-  while (v != NULL && columnIndex < COLUMNS) {
+  while (v != NULL && columnIndex < NUM_COLUMNS) {
     int curValue = aJson.getObjectItem(v, attribute)->valueint;
     spotArr[columnIndex] += curValue;
     counter++;
@@ -90,6 +98,11 @@ void parseMetric(aJsonObject* root, char* metric, char* attribute, int* spotArr)
   }
 }
 
+/*
+ * Get the full json representation of the given spot.
+ * Right now it is hard coded because I dont have a wifi
+ * shield.
+ */
 char* getSpotJSON(String spotName) {
   if (spotName == "Mavericks") return json_mavericks;
   else if (spotName == "Lower Trestles") return json_trestles;
@@ -103,31 +116,39 @@ void loop() {
   
   if (switchValidPress(spotTrack)) {
     //change spotIndex
-    if (spotIndex++ >= SPOTS) spotIndex = 0; 
-    transition();
+    int newSpot = curSpot + 1;
+    if (newSpot >= NUM_SPOTS) newSpot = 0; 
+    transition(newSpot, curMetric);
   }
   
   if (switchValidPress(metricTrack)) {
     //set new metric
-    newMetric = curMetric + 1;
+    int newMetric = curMetric + 1;
     if (newMetric > TIDE) newMetric = SWELL;
-    transition();
-    curMetric = newMetric;
-    newMetric = -1;
+    transition(curSpot, newMetric);
   }
   
   //every N minutes, setupSpots()
 }
 
-void transition() {
-  //in the allotted time
-    //for each column
-      //set speed/direction of spin based difference btwn current pos and desired pos
-  for (int i = 0; i < COLUMNS; i++) {
+/*
+ * Transition the chart to the new spot and new metric.
+ * For each column, look up the delta in height, set the direction 
+ * to spin, and the duration for which to spin.
+ *
+ * Determine the time based off of the predetermined rotation
+ * speed and the size of the spindle in relation to the height delta.
+ */
+void transition(int newSpot, int newMetric) {
+  for (int i = 0; i < NUM_COLUMNS; i++) {
     int direc = ROTATE_RIGHT;
     
-    int curValue = 0;//TODO
-    int newValue = 0;//TODO
+    //TODO this could get sped up
+    int curValue;
+    if (curSpot < 0 || curMetric < 0) curValue = 0;
+    else curValue = spots[curSpot].values[curMetric][i];
+    
+    int newValue = spots[newSpot].values[newMetric][i];
     
     float delta = newValue - curValue;
     
@@ -141,4 +162,7 @@ void transition() {
     delay(transitionTime);
     servoOff(i);
   }
+  
+  curSpot = newSpot;
+  curMetric = newMetric;
 }
