@@ -19,7 +19,6 @@ const int metricPin = 4;
 switchTracker metricTrack;
 
 //The info for the metrics shown
-enum {SWELL, WIND, TIDE};
 int curMetric;
 int newMetric;
 
@@ -58,9 +57,9 @@ Spot setupSpot(String spotName) {
   char* json = getSpotJSON(spotName);
   aJsonObject* root = aJson.parse(json);//, jsonFilter);
 
-  parseMetric(root, "forecast", "size_ft", newSpot.swellValues);
-  parseMetric(root, "tide", "tide", newSpot.tideValues);
-  parseMetric(root, "wind", "speed_mph", newSpot.windValues);
+  parseMetric(root, "forecast", "size_ft", newSpot.values[SWELL]);
+  parseMetric(root, "tide", "tide", newSpot.values[TIDE]);
+  parseMetric(root, "wind", "speed_mph", newSpot.values[WIND]);
   
   return newSpot;
 }
