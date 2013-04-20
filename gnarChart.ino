@@ -1,42 +1,52 @@
 #include <Servo.h> 
 #include <aJSON.h>
-#include "testData.h"
+#include "pololu.h"
+#include "switchTracker.h"
 #include "Spot.h"
+#include "testData.h"
+
+//The circumference of a servo spindle
+#define CIR 3.14
+//The time it takes for each servo to fully rotate once.
+//The servos rotate at different speeds, which is probably an
+//issue with how I modified them, but whatever.
+const int rotationSpeed[] = {1700, 1500, 1500, 1500, 1500, 1500, 1500, 1500};
 
 //I/O pins
-Servo myServo;
-const int servoPin = 2;
-const int spotBtn = 3;
-const int metricBtn = 4;
+const int spotPin = 3;
+switchTracker spotTrack;
+const int metricPin = 4;
+switchTracker metricTrack;
 
 //The info for the metrics shown
-enum metric {SWELL, WIND, TIDE};
-metric curMetric;
-metric prevMetric;
+enum {SWELL, WIND, TIDE};
+int curMetric;
+int newMetric;
 
 //General constants
-const int numSpots = 3;
-Spot spots[numSpots];
 const String spotNames[] = {"Mavericks", "El Porto", "Lower Trestles"};
+Spot spots[SPOTS];
+int spotIndex;
 
 //char** jsonFilter = {"forecast", "hour", "size", "size_ft", "tide", "tide_meters", "wind", "speed_kts", "speed_mpg", NULL};
-
-const int transitionTime = 1500;
-int spotIndex = 0;
 
 
 //Initialization code
 void setup() {
-  myServo.attach(servoPin);
+  Serial.begin(9600);
   
-  pinMode(spotBtn, INPUT);
-  pinMode(metricBtn, INPUT);
+  initSwitchTrack(spotTrack, spotPin);
+  initSwitchTrack(metricTrack, metricPin);
   
   setupSpots();
+  
+  spotIndex = 0;
+  curMetric = 0;
+  newMetric = -1;
 }
 
 void setupSpots() {
-  for (int i = 0; i < numSpots; i++) {
+  for (int i = 0; i < SPOTS; i++) {
     spots[i] = setupSpot(spotNames[i]); 
   }
 }
@@ -63,7 +73,7 @@ void parseMetric(aJsonObject* root, char* metric, char* attribute, int* spotArr)
   int minValue = 0;
   int columnIndex = 0;
   int counter = 0;
-  while (v != NULL && columnIndex < numColumns) {
+  while (v != NULL && columnIndex < COLUMNS) {
     int curValue = aJson.getObjectItem(v, attribute)->valueint;
     spotArr[columnIndex] += curValue;
     counter++;
@@ -92,23 +102,44 @@ char* getSpotJSON(String spotName) {
 void loop() {
   //light LEDs
   
-  //if spotBtn is pressed
+  if (switchValidPress(spotTrack)) {
     //change spotIndex
-    //transition
-    
-  //if metricBtn is pressed
-    //change metric
-    //transition
-    
+    if (spotIndex++ >= SPOTS) spotIndex = 0; 
+    transition();
+  }
+  
+  if (switchValidPress(metricTrack)) {
+    //set new metric
+    newMetric = curMetric + 1;
+    if (newMetric > TIDE) newMetric = SWELL;
+    transition();
+    curMetric = newMetric;
+    newMetric = -1;
+  }
+  
   //every N minutes, setupSpots()
 }
 
-//coninuous rotation servos range from 
-//0 (full speed one way)
-//90 (no movement)
-//180 (full speed other way)
 void transition() {
   //in the allotted time
     //for each column
       //set speed/direction of spin based difference btwn current pos and desired pos
+  for (int i = 0; i < COLUMNS; i++) {
+    int direc = ROTATE_RIGHT;
+    
+    int curValue = 0;//TODO
+    int newValue = 0;//TODO
+    
+    float delta = newValue - curValue;
+    
+    if (delta < 0) {
+       direc = ROTATE_LEFT;
+       delta *= -1;
+    } 
+    
+    float transitionTime = (delta / CIR) * rotationSpeed[i];
+    servoPut(i, direc);
+    delay(transitionTime);
+    servoOff(i);
+  }
 }
