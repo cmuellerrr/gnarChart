@@ -47,27 +47,22 @@ void setupSpots() {
   for (int i = 0; i < NUM_SPOTS; i++) {
     setupSpot(i, spotNames[i]);
   }
-  
-  spots[0].name = "test 0";
+  /*
   for (int i = 0; i < NUM_COLUMNS; i++) {
-    spots[0].values[SWELL][i] = 3;
-    spots[0].values[WIND][i] = 6;
-    spots[0].values[TIDE][i] = 9;
+     spots[0].values[SWELL][i] = 3;
+     spots[0].values[TIDE][i] = 6;
+     spots[0].values[WIND][i] = 9; 
   }
-  
-  spots[1].name = "test 1";
   for (int i = 0; i < NUM_COLUMNS; i++) {
-    spots[1].values[SWELL][i] = 9;
-    spots[1].values[WIND][i] = 3;
-    spots[1].values[TIDE][i] = 6;
+     spots[1].values[SWELL][i] = 9;
+     spots[1].values[TIDE][i] = 3;
+     spots[1].values[WIND][i] = 6; 
   }
-  
-  spots[2].name = "test 2";
   for (int i = 0; i < NUM_COLUMNS; i++) {
-    spots[2].values[SWELL][i] = 6;
-    spots[2].values[WIND][i] = 9;
-    spots[2].values[TIDE][i] = 3;
-  }
+     spots[2].values[SWELL][i] = 6;
+     spots[2].values[TIDE][i] = 9;
+     spots[2].values[WIND][i] = 3; 
+  }*/
 }
 
 /*
@@ -81,18 +76,17 @@ void setupSpot(int spotIndex, String spotName) {
   char* json = getSpotJSON(spotName);
   aJsonObject* root = aJson.parse(json);
 
-  parseMetric(root, "forecast", spots[spotIndex].values[SWELL]);
-  parseMetric(root, "tide", spots[spotIndex].values[TIDE]);
-  parseMetric(root, "wind", spots[spotIndex].values[WIND]);
+  parseMetric(root, "forecast", spotIndex, SWELL);
+  parseMetric(root, "tide", spotIndex, TIDE);
+  parseMetric(root, "wind", spotIndex, WIND);
+  //aJson.deleteItem(root);
 }
 
 /*
  * From the given json object root, parse the given metric into the 
  * array specified by the given pointer.
  */
-void parseMetric(aJsonObject* root, char* metric, int* spotArr) {
-  Serial.println("parsing metric");
-  
+void parseMetric(aJsonObject* root, char* metric, int spotIndex, int metricIndex) {
   aJsonObject* values = aJson.getObjectItem(root, metric);
   aJsonObject* v = values->child;
   
@@ -100,26 +94,15 @@ void parseMetric(aJsonObject* root, char* metric, int* spotArr) {
   if (metric == "wind") maxValue = 20;
   
   int columnIndex = 0;
-  int counter = 0;
   while (v != 0 && columnIndex < NUM_COLUMNS) {
     
-    int curValue = v->valueint;    
-    
-    spotArr[columnIndex] += curValue;
-    
-    counter++;
-        
-    if (counter >= columnSpan) {
-      int finalVal = spotArr[columnIndex] / columnSpan;
-      finalVal = (finalVal / maxValue) * HEIGHT;
-      if (finalVal < 0) finalVal = 0;
-      if (finalVal > maxValue) finalVal = maxValue;
-      spotArr[columnIndex] = finalVal;
+    float curValue = (float)v->valueint;
+    curValue = (curValue / maxValue) * HEIGHT;
+    if (curValue < 0) curValue = 0;
+    if (curValue > maxValue) curValue = maxValue;
+    spots[spotIndex].values[metricIndex][columnIndex] = curValue;
       
-      columnIndex++;
-      counter = 0;
-    }        
-
+    columnIndex++;
     v = v->next;
   }
 }
@@ -174,12 +157,12 @@ void transition(int newSpot, int newMetric) {
     int direc = ROTATE_RIGHT;
     
     //TODO this could get sped up
-    int curValue;
+    float curValue;
     if (curSpot < 0 || curMetric < 0) curValue = 0;
     else curValue = spots[curSpot].values[curMetric][i];
     
     //Reset to 0s if both are negative
-    int newValue;
+    float newValue;
     if (newSpot < 0 && newMetric < 0) newValue = 0;
     else newValue = spots[newSpot].values[newMetric][i];
     

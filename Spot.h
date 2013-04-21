@@ -13,5 +13,5 @@ const int columnSpan = 24 / NUM_COLUMNS;
  */
 typedef struct Spot {
   String name;
-  int values[NUM_METRICS][NUM_COLUMNS];
+  float values[NUM_METRICS][NUM_COLUMNS];
 };
