@@ -8,6 +8,8 @@
 	<script type='text/javascript' src='http://code.jquery.com/jquery-1.9.1.min.js'></script>
 
 	<script>
+	var NUM_COLUMNS = 8;
+	var columnSpan = 24 / NUM_COLUMNS;
 
 	//Mavericks - San Mateo - Spot 122
 	//Lower Trestles - Orange County - Spot 208
@@ -32,17 +34,28 @@
 		console.log("Getting forecast for spot " + spotId);
 		$.getJSON('http://api.spitcast.com/api/spot/forecast/' + spotId + '/', function(data) {
 			var forecast = [];
-			for (var i = 0; i < data.length; i++) {
-				var f = {};
-				f['hour'] = data[i]['hour'];
-				f['size'] = data[i]['size'].toString();
-				f['size_ft'] = data[i]['size_ft'].toString();
-				forecast.push(f);
+			var counter = 0;
+			var temp = 0;
 
+			for (var i = 0; i < data.length; i++) {
+				temp += data[i]['size'];
+				counter++;
+
+				if (counter >= columnSpan) {
+					temp = temp / columnSpan;
+					forecast.push(Math.round(temp));
+					temp = 0;
+					counter = 0;
+				}
+				//var f = {};
+				//f['hour'] = data[i]['hour'];
+				//f['size'] = data[i]['size'];
+				//forecast.push(f);
+				//forecast.push(data[i]['size']);
 			} 
 
 			console.log(forecast);
-			$('#' + spotId).append('<p>\\"forecast\\":' + JSON.stringify(forecast).replace(/"/g, '\\"') + '</p>');
+			$('#' + spotId).append('\\"forecast\\":' + JSON.stringify(forecast).replace(/"/g, '\\"'));
 			return forecast;
 		});
 	}
@@ -51,17 +64,28 @@
 		console.log("Getting tide for county " + county);
 		$.getJSON('http://api.spitcast.com/api/county/tide/' + county + '/', function(data) {
 			var tide = [];
-			for (var i = 0; i < data.length; i++) {
-				var t = {};
-				t['hour'] = data[i]['hour'];
-				t['tide'] = data[i]['tide'].toString();
-				t['tide_meters'] = data[i]['tide_meters'].toString();
-				tide.push(t);
+			var counter = 0;
+			var temp = 0;
 
+			for (var i = 0; i < data.length; i++) {
+				temp += data[i]['tide'];
+				counter++;
+
+				if (counter >= columnSpan) {
+					temp = temp / columnSpan;
+					tide.push(Math.round(temp));
+					temp = 0;
+					counter = 0;
+				}
+				//var t = {};
+				//t['hour'] = data[i]['hour'];
+				//t['tide'] = data[i]['tide']
+				//tide.push(t);
+				//tide.push(Math.round(data[i]['tide']));
 			} 
 
 			console.log(tide);
-			$('#' + spotId).append('<p>\\"tide\\":' + JSON.stringify(tide).replace(/"/g, '\\"') + '</p>');
+			$('#' + spotId).append('\\"tide\\":' + JSON.stringify(tide).replace(/"/g, '\\"'));
 			return tide;
 		});
 	}
@@ -70,17 +94,30 @@
 		console.log("Getting wind for county " + county);
 		$.getJSON('http://api.spitcast.com/api/county/wind/' + county + '/', function(data) {
 			var wind = [];
-			for (var i = 0; i < data.length; i++) {
-				var w = {};
-				w['hour'] = data[i]['hour'];
-				w['speed_kts'] = data[i]['speed_kts'].toString();
-				w['speed_mph'] = data[i]['speed_mph'].toString();
-				wind.push(w);
 
+			var counter = 0;
+			var temp = 0;
+
+			for (var i = 0; i < data.length; i++) {
+				temp += data[i]['speed_mph'];
+				counter++;
+
+				if (counter >= columnSpan) {
+					temp = temp / columnSpan;
+					wind.push(Math.round(temp));
+					temp = 0;
+					counter = 0;
+				}
+
+				//var w = {};
+				//w['hour'] = data[i]['hour'];
+				//w['speed_mph'] = data[i]['speed_mph'];
+				//wind.push(w);
+				//wind.push(Math.round(data[i]['speed_mph']));
 			} 
 
 			console.log(wind);
-			$('#' + spotId).append('<p>\\"wind\\":' + JSON.stringify(wind).replace(/"/g, '\\"') + '</p>');
+			$('#' + spotId).append('\\"wind\\":' + JSON.stringify(wind).replace(/"/g, '\\"'));
 			return wind;
 		});
 	}

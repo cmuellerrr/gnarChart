@@ -7,10 +7,12 @@
 
 //The circumference of a servo spindle
 #define CIR 3.14
+#define HEIGHT 12
+
 //The time it takes for each servo to fully rotate once.
 //The servos rotate at different speeds, which is probably an
 //issue with how I modified them, but whatever.
-const int rotationSpeed[] = {1700, 1500, 1500, 1500, 1500, 1500, 1500, 1500};
+const int rotationSpeed[] = {1700, 1400, 1700, 1600, 1700, 1500, 1500, 1500};
 
 //I/O pins
 const int spotPin = 3;
@@ -23,8 +25,6 @@ const String spotNames[] = {"Mavericks", "El Porto", "Lower Trestles"};
 Spot spots[NUM_SPOTS];
 int curSpot;
 int curMetric;
-
-//char** jsonFilter = {"forecast", "hour", "size", "size_ft", "tide", "tide_meters", "wind", "speed_kts", "speed_mpg", NULL};
 
 //Initialization code
 void setup() {
@@ -45,7 +45,28 @@ void setup() {
  */
 void setupSpots() {
   for (int i = 0; i < NUM_SPOTS; i++) {
-    spots[i] = setupSpot(spotNames[i]); 
+    setupSpot(i, spotNames[i]);
+  }
+  
+  spots[0].name = "test 0";
+  for (int i = 0; i < NUM_COLUMNS; i++) {
+    spots[0].values[SWELL][i] = 3;
+    spots[0].values[WIND][i] = 6;
+    spots[0].values[TIDE][i] = 9;
+  }
+  
+  spots[1].name = "test 1";
+  for (int i = 0; i < NUM_COLUMNS; i++) {
+    spots[1].values[SWELL][i] = 9;
+    spots[1].values[WIND][i] = 3;
+    spots[1].values[TIDE][i] = 6;
+  }
+  
+  spots[2].name = "test 2";
+  for (int i = 0; i < NUM_COLUMNS; i++) {
+    spots[2].values[SWELL][i] = 6;
+    spots[2].values[WIND][i] = 9;
+    spots[2].values[TIDE][i] = 3;
   }
 }
 
@@ -54,42 +75,47 @@ void setupSpots() {
  * Get the json representation and parse the values into
  * their appropriate arrays.
  */
-Spot setupSpot(String spotName) {  
-  Spot newSpot;
-  newSpot.name = spotName;
+void setupSpot(int spotIndex, String spotName) {  
+  spots[spotIndex].name = spotName;
   
   char* json = getSpotJSON(spotName);
-  aJsonObject* root = aJson.parse(json);//, jsonFilter);
+  aJsonObject* root = aJson.parse(json);
 
-  parseMetric(root, "forecast", "size_ft", newSpot.values[SWELL]);
-  parseMetric(root, "tide", "tide", newSpot.values[TIDE]);
-  parseMetric(root, "wind", "speed_mph", newSpot.values[WIND]);
-  
-  return newSpot;
+  parseMetric(root, "forecast", spots[spotIndex].values[SWELL]);
+  parseMetric(root, "tide", spots[spotIndex].values[TIDE]);
+  parseMetric(root, "wind", spots[spotIndex].values[WIND]);
 }
 
 /*
  * From the given json object root, parse the given metric into the 
  * array specified by the given pointer.
  */
-void parseMetric(aJsonObject* root, char* metric, char* attribute, int* spotArr) {
+void parseMetric(aJsonObject* root, char* metric, int* spotArr) {
+  Serial.println("parsing metric");
+  
   aJsonObject* values = aJson.getObjectItem(root, metric);
   aJsonObject* v = values->child;
   
-  int maxValue = 0;
-  int minValue = 0;
+  int maxValue = 10;
+  if (metric == "wind") maxValue = 20;
+  
   int columnIndex = 0;
   int counter = 0;
-  while (v != NULL && columnIndex < NUM_COLUMNS) {
-    int curValue = aJson.getObjectItem(v, attribute)->valueint;
-    spotArr[columnIndex] += curValue;
-    counter++;
+  while (v != 0 && columnIndex < NUM_COLUMNS) {
     
-    if (curValue < minValue) minValue = curValue;
-    if (curValue > maxValue) maxValue = curValue;
+    int curValue = v->valueint;    
+    
+    spotArr[columnIndex] += curValue;
+    
+    counter++;
         
     if (counter >= columnSpan) {
-      spotArr[columnIndex] /= columnSpan;
+      int finalVal = spotArr[columnIndex] / columnSpan;
+      finalVal = (finalVal / maxValue) * HEIGHT;
+      if (finalVal < 0) finalVal = 0;
+      if (finalVal > maxValue) finalVal = maxValue;
+      spotArr[columnIndex] = finalVal;
+      
       columnIndex++;
       counter = 0;
     }        
@@ -114,7 +140,9 @@ char* getSpotJSON(String spotName) {
 void loop() {
   //light LEDs
   
-  //TODO make a way to set all to 0
+  if (switchValidPress(spotTrack) && switchValidPress(metricTrack)) {
+    transition(-1, -1); 
+  }
   
   if (switchValidPress(spotTrack)) {
     //change spotIndex
@@ -150,7 +178,10 @@ void transition(int newSpot, int newMetric) {
     if (curSpot < 0 || curMetric < 0) curValue = 0;
     else curValue = spots[curSpot].values[curMetric][i];
     
-    int newValue = spots[newSpot].values[newMetric][i];
+    //Reset to 0s if both are negative
+    int newValue;
+    if (newSpot < 0 && newMetric < 0) newValue = 0;
+    else newValue = spots[newSpot].values[newMetric][i];
     
     float delta = newValue - curValue;
     
