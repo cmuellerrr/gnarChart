@@ -45,16 +45,6 @@ void setupSpots() {
   for (int i = 0; i < NUM_SPOTS; i++) {
     setupSpot(i, spotNames[i]);
   }
-  /*
-  for (int i = 0; i < NUM_COLUMNS; i++) {
-    Serial.println(spots[0].values[0][i]);
-  }
-  for (int i = 0; i < NUM_COLUMNS; i++) {
-    Serial.println(spots[0].values[1][i]);
-  }
-  for (int i = 0; i < NUM_COLUMNS; i++) {
-    Serial.println(spots[0].values[2][i]);
-  }*/
 }
 
 /*
@@ -136,6 +126,9 @@ void loop() {
     if (newSpot >= NUM_SPOTS) {
       newSpot = 0; 
     }
+    if (curMetric < 0) {
+       curMetric = 0; 
+    }
     transition(newSpot, curMetric);
   }
   
@@ -144,6 +137,9 @@ void loop() {
     int newMetric = curMetric + 1;
     if (newMetric > TIDE) {
       newMetric = SWELL;
+    }
+    if (curSpot < 0) {
+        curSpot = 0;
     }
     transition(curSpot, newMetric);
   }
@@ -160,6 +156,7 @@ void loop() {
  * speed and the size of the spindle in relation to the height delta.
  */
 void transition(int newSpot, int newMetric) {  
+  Serial.println("Transition");
   for (int i = 0; i < NUM_COLUMNS; i++) {
     int direc = ROTATE_RIGHT;
     
@@ -175,34 +172,23 @@ void transition(int newSpot, int newMetric) {
     float newValue = curValue;
     if (newSpot < 0 && newMetric < 0) {
       newValue = 0;
-      newSpot = 0;
-      newMetric = 0;
     } else {
-      //Serial.println(spots[newSpot].values[newMetric][i]);
       newValue = spots[newSpot].values[newMetric][i];
     }
     
     float delta = newValue - curValue;
-    //Serial.println("Current:");
-    //Serial.println(curValue);
-    //Serial.println("New:");
-    //Serial.println(newValue);
-    //Serial.println("Delta:");
-    //Serial.println(delta);
-    
+    Serial.println(curValue);
+    Serial.println(newValue);
     if (delta < 0) {
        direc = ROTATE_LEFT;
        delta *= -1;
     } 
     
     float transitionTime = (delta / CIR) * 1500;
-    //Serial.println("Rotating: ");
-    //Serial.println(direc);
-    //Serial.println("For: ");
-    //Serial.println(transitionTime);
-    servoPut(i, direc);
-    delay(transitionTime);
-    servoOff(i);
+    
+    //servoPut(i, direc);
+    //delay(transitionTime);
+    //servoOff(i);
   }
   
   curSpot = newSpot;
