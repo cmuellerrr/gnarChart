@@ -7,7 +7,7 @@
 
 //The circumference of a servo spindle
 #define CIR .785
-#define HEIGHT 11
+#define HEIGHT 10
 
 //I/O pins
 const int metricPin = 3;
@@ -59,9 +59,10 @@ void setupSpot(int spotIndex, String spotName) {
   aJsonObject* root = aJson.parse(json);
 
   parseMetric(root, "forecast", spotIndex, SWELL);
-  parseMetric(root, "wind", spotIndex, WIND);
   parseMetric(root, "tide", spotIndex, TIDE);
-  //aJson.deleteItem(root);
+  parseMetric(root, "wind", spotIndex, WIND);
+  
+  aJson.deleteItem(root);
 }
 
 /*
@@ -73,7 +74,7 @@ void parseMetric(aJsonObject* root, char* metric, int spotIndex, int metricIndex
   aJsonObject* v = values->child;
   
   int maxValue = 10;
-  if (metric == "wind") {
+  if (metricIndex == WIND) {
     maxValue = 20;
   }
   
@@ -103,10 +104,10 @@ void parseMetric(aJsonObject* root, char* metric, int spotIndex, int metricIndex
 char* getSpotJSON(String spotName) {
   if (spotName == "Mavericks") {
     return json_mavericks;
-  } else if (spotName == "Lower Trestles") {
-    return json_trestles;
   } else if (spotName == "El Porto") {
     return json_porto;
+  } else if (spotName == "Lower Trestles") {
+    return json_trestles;
   } else {
     return "";
   }
@@ -135,7 +136,7 @@ void loop() {
   if (switchValidPress(metricTrack)) {
     //set new metric
     int newMetric = curMetric + 1;
-    if (newMetric > TIDE) {
+    if (newMetric > WIND) {
       newMetric = SWELL;
     }
     if (curSpot < 0) {
@@ -156,7 +157,10 @@ void loop() {
  * speed and the size of the spindle in relation to the height delta.
  */
 void transition(int newSpot, int newMetric) {  
-  Serial.println("Transition");
+  //Serial.println("Transition");
+  //Serial.println(newSpot);
+  //Serial.println(newMetric);
+  
   for (int i = 0; i < NUM_COLUMNS; i++) {
     int direc = ROTATE_RIGHT;
     
@@ -177,8 +181,6 @@ void transition(int newSpot, int newMetric) {
     }
     
     float delta = newValue - curValue;
-    Serial.println(curValue);
-    Serial.println(newValue);
     if (delta < 0) {
        direc = ROTATE_LEFT;
        delta *= -1;

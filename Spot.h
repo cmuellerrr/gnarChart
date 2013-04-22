@@ -2,7 +2,7 @@
 #define NUM_METRICS 3
 #define NUM_COLUMNS 8
 
-enum {SWELL, WIND, TIDE};
+enum {SWELL, TIDE, WIND};
 const int columnSpan = 24 / NUM_COLUMNS;
 
 
