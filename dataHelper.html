@@ -8,6 +8,9 @@
 	<script type='text/javascript' src='http://code.jquery.com/jquery-1.9.1.min.js'></script>
 
 	<script>
+	//Some javascript functions to get data from spitcast.com for three hardcoded locations and
+	//massage it into a forme that is easy for the Arduino to parse.
+
 	var NUM_COLUMNS = 8;
 	var columnSpan = 24 / NUM_COLUMNS;
 
@@ -47,11 +50,6 @@
 					temp = 0;
 					counter = 0;
 				}
-				//var f = {};
-				//f['hour'] = data[i]['hour'];
-				//f['size'] = data[i]['size'];
-				//forecast.push(f);
-				//forecast.push(data[i]['size']);
 			} 
 
 			console.log(forecast);
@@ -77,11 +75,6 @@
 					temp = 0;
 					counter = 0;
 				}
-				//var t = {};
-				//t['hour'] = data[i]['hour'];
-				//t['tide'] = data[i]['tide']
-				//tide.push(t);
-				//tide.push(Math.round(data[i]['tide']));
 			} 
 
 			console.log(tide);
@@ -108,12 +101,6 @@
 					temp = 0;
 					counter = 0;
 				}
-
-				//var w = {};
-				//w['hour'] = data[i]['hour'];
-				//w['speed_mph'] = data[i]['speed_mph'];
-				//wind.push(w);
-				//wind.push(Math.round(data[i]['speed_mph']));
 			} 
 
 			console.log(wind);
@@ -123,8 +110,8 @@
 	}
  </script>
 </head>
+
 <body onload="getTestData()">
-	
 </body>
 </html>
 
