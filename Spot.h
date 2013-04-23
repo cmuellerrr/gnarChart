@@ -1,3 +1,7 @@
+/*
+ * A structure to represent a surf spot. It has a name and 
+ * and array of values corresponding to the machine's columns.
+ */
 #define NUM_SPOTS 3
 #define NUM_METRICS 3
 #define NUM_COLUMNS 8

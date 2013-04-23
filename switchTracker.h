@@ -1,3 +1,7 @@
+/*
+ * Switch code stolen from Scott.
+ */
+
 /* Structure to track and debounce the state of a push button switch */
 typedef struct switchTracker {
   int lastReading;       // last raw value read

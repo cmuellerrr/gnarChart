@@ -1,3 +1,24 @@
+/*
+ * The Gnar Chart!
+ * Display surf conditions using a mechanical bar graph.  The machine
+ * holds 3 locations around Californaia and displays the swell, tide,
+ * and wind conditions for the day.  The points are displayed by 
+ * moving fabric boxes up and down based on the relative value to display,
+ * The swells and tides have a bound set at 10ft while wind has a 
+ * upper bound of 20mph.  These are slightly arbitrary, but grounded in 
+ * the fact that anything above those values is, ya know, big.
+ *
+ * The machine makes use of the Pololu servo controller to drive all 
+ * servo rotation.
+ *
+ *
+ * NOTE: I wasn't able to get a wifi card, so I'm Wizard of Oz-ing 
+ * the JSON data.  BUT - it is actually parsing JSON.  I build some
+ * JavaScript (included) to retreive the data and massage it into 
+ * the appropriate format.
+ */
+
+
 #include <Servo.h> 
 #include <aJSON.h>
 #include "pololu.h"
@@ -35,7 +56,6 @@ void setup() {
   
   curSpot = -1;
   curMetric = -1;
-  transition(0, SWELL);
 }
 
 /*
@@ -73,6 +93,7 @@ void parseMetric(aJsonObject* root, char* metric, int spotIndex, int metricIndex
   aJsonObject* values = aJson.getObjectItem(root, metric);
   aJsonObject* v = values->child;
   
+  //Set upper bounds
   int maxValue = 10;
   if (metricIndex == WIND) {
     maxValue = 20;
@@ -113,7 +134,10 @@ char* getSpotJSON(String spotName) {
   }
 }
 
-/* Main routine (called repeated by from the Arduino framework) */
+/* Main routine (called repeated by from the Arduino framework) 
+ * Handle the button presses to reset and cycle between spots and
+ * metrics.
+ */
 void loop() {
   //light LEDs
   
@@ -180,6 +204,7 @@ void transition(int newSpot, int newMetric) {
       newValue = spots[newSpot].values[newMetric][i];
     }
     
+    //Rotate left if you are lowering
     float delta = newValue - curValue;
     if (delta < 0) {
        direc = ROTATE_LEFT;
@@ -188,9 +213,9 @@ void transition(int newSpot, int newMetric) {
     
     float transitionTime = (delta / CIR) * 1500;
     
-    //servoPut(i, direc);
-    //delay(transitionTime);
-    //servoOff(i);
+    servoPut(i, direc);
+    delay(transitionTime);
+    servoOff(i);
   }
   
   curSpot = newSpot;
